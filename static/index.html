@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MindVault — Your Living Memory</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050510;--bg2:#0a0a18;--bg3:#0f0f1a;--bg4:#111124;--border:#1e1e3a;--border2:#2d2d5e;--text:#e2e8f0;--muted:#64748b;--purple:#818cf8;--purple2:#c084fc;--green:#4ade80;--blue:#60a5fa;--pink:#f472b6;--orange:#fb923c;--red:#f87171}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+header{padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(90deg,var(--purple),var(--purple2),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:-2px}
+.badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+.badge-local{background:#14532d;color:#86efac}
+.badge-cloud{background:#431407;color:var(--orange)}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+select{background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px 10px;gap:6px;flex-shrink:0}
+.s-title{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:0 4px;margin-bottom:2px}
+.op-btn{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;text-align:left;width:100%}
+.op-btn.active{transform:translateX(2px)}
+.btn-r{background:#1a2744;color:var(--blue)}.btn-r:hover,.btn-r.active{background:#1e3a5f}
+.btn-q{background:#1a2a1a;color:var(--green)}.btn-q:hover,.btn-q.active{background:#14532d}
+.btn-i{background:#2a1a2a;color:var(--purple2)}.btn-i:hover,.btn-i.active{background:#3b1f3b}
+.btn-f{background:#2a1a1a;color:var(--red)}.btn-f:hover,.btn-f.active{background:#431407}
+.sidebar-div{height:1px;background:var(--border);margin:6px 0}
+.stats{margin-top:auto;padding:10px;background:var(--bg4);border-radius:8px;border:1px solid var(--border)}
+.stat-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.stat-l{color:var(--muted)}.stat-v{color:var(--purple);font-weight:700}
+.node-legend{margin-top:8px}
+.legend-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);padding:2px 0}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden}
+
+/* CHAT */
+.chat-col{display:flex;flex-direction:column;flex:1;min-width:0;border-right:1px solid var(--border)}
+.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+
+/* WELCOME / ONBOARDING */
+.onboarding{max-width:520px;margin:20px auto;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:28px}
+.ob-title{font-size:22px;font-weight:800;margin-bottom:6px;background:linear-gradient(90deg,var(--purple),var(--purple2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ob-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.ob-progress{display:flex;gap:6px;margin-bottom:20px}
+.ob-dot{height:4px;flex:1;border-radius:2px;background:var(--border2);transition:background .3s}
+.ob-dot.done{background:var(--purple)}
+.ob-dot.active{background:var(--purple2)}
+.ob-q{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.ob-input{width:100%;background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:10px;font-size:14px;outline:none;transition:border .15s;font-family:inherit}
+.ob-input:focus{border-color:var(--purple)}
+.ob-btn{margin-top:12px;padding:10px 24px;background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s}
+.ob-btn:hover{opacity:.85}
+.ob-skip{background:none;border:none;color:var(--muted);font-size:12px;margin-left:12px;cursor:pointer;text-decoration:underline}
+
+/* MESSAGES */
+.msg{display:flex;flex-direction:column;max-width:600px;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1}}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+.msg.user .bubble{background:#1e3a5f;color:#bfdbfe;border-bottom-right-radius:3px}
+.msg.ai .bubble{background:var(--bg3);border:1px solid var(--border);border-bottom-left-radius:3px}
+.msg-meta{font-size:10px;color:var(--muted);margin:3px 5px 0}
+.result-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:6px;font-size:12px}
+.op-tag{font-size:9px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:7px}
+.tag-r{color:var(--blue)}.tag-q{color:var(--green)}.tag-i{color:var(--purple2)}.tag-f{color:var(--red)}
+.recall-ans{padding:8px 11px;background:#0c1f0c;border-left:3px solid var(--green);border-radius:4px;margin-top:5px;color:#a7f3d0;line-height:1.5}
+.no-mem{color:var(--muted);font-style:italic}
+.graph-info{margin-top:8px;font-size:11px;color:var(--muted)}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;margin-right:7px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* INPUT BAR */
+.input-bar{padding:14px 18px;background:var(--bg2);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.input-wrap{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:11px;display:flex;flex-direction:column;overflow:hidden;transition:border .15s}
+.input-wrap:focus-within{border-color:var(--purple)}
+.op-pills{display:flex;gap:3px;padding:7px 10px 4px;border-bottom:1px solid var(--border)}
+.pill{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:none;opacity:.45;transition:all .15s}
+.pill.on{opacity:1}
+.pill[data-op=remember]{background:#1e3a5f;color:var(--blue)}
+.pill[data-op=recall]{background:#14532d;color:var(--green)}
+.pill[data-op=improve]{background:#3b1f3b;color:var(--purple2)}
+.pill[data-op=forget]{background:#431407;color:var(--red)}
+.input-row{display:flex;align-items:center;padding:4px 6px 4px 12px;gap:6px}
+textarea{flex:1;background:transparent;border:none;color:var(--text);font-size:13px;resize:none;outline:none;min-height:36px;max-height:100px;font-family:inherit;line-height:1.5;padding:6px 0}
+.mic-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:4px;border-radius:6px;transition:background .15s;flex-shrink:0}
+.mic-btn:hover{background:var(--bg3)}
+.mic-btn.recording{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.send-btn{padding:10px 18px;background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:opacity .15s;white-space:nowrap;flex-shrink:0}
+.send-btn:hover{opacity:.85}
+.send-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* GRAPH PANEL */
+.graph-col{width:380px;display:flex;flex-direction:column;background:var(--bg2);flex-shrink:0}
+.graph-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.graph-title{font-size:13px;font-weight:700;color:var(--purple)}
+.graph-count{font-size:11px;color:var(--muted)}
+#graph-canvas{flex:1;width:100%;cursor:grab}
+#graph-canvas:active{cursor:grabbing}
+.graph-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;opacity:.4;padding:20px;text-align:center}
+.graph-empty .icon{font-size:40px}
+.graph-empty p{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">🧠 MindVault</div>
+    <div class="logo-sub">Your Living Memory</div>
+  </div>
+  <div id="mode-switch" title="Switch between open-source local Cognee and Cognee Cloud" style="display:flex;align-items:center;gap:0;border:1px solid #333;border-radius:20px;overflow:hidden;cursor:pointer;user-select:none;">
+    <span id="mode-opt-local" style="font-size:10px;font-weight:700;letter-spacing:.5px;padding:5px 12px;">● LOCAL</span>
+    <span id="mode-opt-cloud" style="font-size:10px;font-weight:700;letter-spacing:.5px;padding:5px 12px;">☁ CLOUD</span>
+  </div>
+  <span id="mode-badge" style="display:none"></span>
+  <div class="header-right">
+    <select id="dataset-select">
+      <option value="default">📁 default</option>
+      <option value="work">💼 work</option>
+      <option value="personal">👤 personal</option>
+      <option value="research">🔬 research</option>
+    </select>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="s-title">Operations</div>
+    <button class="op-btn btn-r active" id="btn-remember" onclick="setOp('remember')">💾 Remember</button>
+    <button class="op-btn btn-q" id="btn-recall" onclick="setOp('recall')">🔍 Recall</button>
+    <button class="op-btn btn-i" id="btn-improve" onclick="setOp('improve')">✨ Improve</button>
+    <button class="op-btn btn-f" id="btn-forget" onclick="setOp('forget')">🗑️ Forget</button>
+
+    <div class="sidebar-div"></div>
+
+    <div class="s-title">Session Stats</div>
+    <div class="stats">
+      <div class="stat-row"><span class="stat-l">Remembered</span><span class="stat-v" id="s-rem">0</span></div>
+      <div class="stat-row"><span class="stat-l">Recalled</span><span class="stat-v" id="s-rec">0</span></div>
+      <div class="stat-row"><span class="stat-l">Graph Nodes</span><span class="stat-v" id="s-nodes">0</span></div>
+      <div class="stat-row"><span class="stat-l">Connections</span><span class="stat-v" id="s-edges">0</span></div>
+
+      <div class="node-legend" style="margin-top:10px">
+        <div class="s-title" style="margin-bottom:5px">Node Types</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f472b6"></div>person</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#818cf8"></div>concept</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#4ade80"></div>place</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#fb923c"></div>event</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#facc15"></div>goal</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f87171"></div>emotion</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#22d3ee"></div>decision</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- CHAT COLUMN -->
+    <div class="chat-col">
+      <div class="chat-area" id="chat">
+
+        <!-- ONBOARDING -->
+        <div class="onboarding" id="onboarding">
+          <div class="ob-title">You change. Your AI remembers.</div>
+          <div class="ob-sub">Answer 5 questions. MindVault builds your knowledge graph. Then ask it anything — forever.</div>
+          <div class="ob-progress" id="ob-progress">
+            <div class="ob-dot active"></div>
+            <div class="ob-dot"></div>
+            <div class="ob-dot"></div>
+            <div class="ob-dot"></div>
+            <div class="ob-dot"></div>
+          </div>
+          <div class="ob-q" id="ob-question">What's your name?</div>
+          <input class="ob-input" id="ob-input" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')obNext()"/>
+          <br/>
+          <button class="ob-btn" onclick="obNext()">Next →</button>
+          <button class="ob-skip" onclick="skipOnboarding()">skip setup</button>
+        </div>
+
+      </div>
+      <div class="input-bar">
+        <div class="input-wrap">
+          <div class="op-pills">
+            <button class="pill on" data-op="remember" onclick="setOp('remember')">💾 Remember</button>
+            <button class="pill" data-op="recall" onclick="setOp('recall')">🔍 Recall</button>
+            <button class="pill" data-op="improve" onclick="setOp('improve')">✨ Improve</button>
+            <button class="pill" data-op="forget" onclick="setOp('forget')">🗑️ Forget</button>
+          </div>
+          <div class="input-row">
+            <textarea id="msg-input" rows="1" placeholder="Type something to remember..."
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
+              oninput="autoResize(this)"></textarea>
+            <button class="mic-btn" id="mic-btn" title="Voice input" onclick="toggleVoice()">🎙️</button>
+          </div>
+        </div>
+        <button class="send-btn" id="send-btn" onclick="send()">Send →</button>
+      </div>
+    </div>
+
+    <!-- GRAPH COLUMN -->
+    <div class="graph-col">
+      <div class="graph-header">
+        <span class="graph-title">🕸️ Knowledge Graph</span>
+        <span class="graph-count" id="graph-count">0 nodes · 0 edges</span>
+        <button id="fit-btn" onclick="fitGraph()" title="Center graph" style="background:none;border:1px solid #444;color:#aaa;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:8px;">⊙ Fit</button>
+      </div>
+      <div id="graph-empty" class="graph-empty">
+        <div class="icon">🧠</div>
+        <p>Your knowledge graph will appear here as you add memories.<br/><br/>Each node is an entity. Each edge is a relationship.</p>
+      </div>
+      <canvas id="graph-canvas" style="display:none"></canvas>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let currentOp = 'remember';
+let stats = {rem:0,rec:0};
+let recognition = null;
+let isRecording = false;
+
+// Graph engine state
+const G = {
+  nodes: [],   // {id, label, type, x, y, vx, vy, highlighted, isNew}
+  edges: [],   // {from, to, label}
+  pan: {x:0, y:0},
+  zoom: 1,
+  drag: null,
+  canvas: null,
+  ctx: null,
+  animFrame: null,
+  lastHighlighted: [],
+};
+
+const NODE_COLORS = {
+  person:   '#f472b6',
+  concept:  '#818cf8',
+  place:    '#4ade80',
+  event:    '#fb923c',
+  goal:     '#facc15',
+  emotion:  '#f87171',
+  decision: '#22d3ee',
+  default:  '#94a3b8',
+};
+
+// Onboarding
+const OB_QUESTIONS = [
+  "What's your name?",
+  "What do you do? (job, role, or how you spend your time)",
+  "What are you working toward right now?",
+  "Tell me one important thing that happened in your life.",
+  "What do you deeply believe in or care about?",
+];
+let obStep = 0;
+const obAnswers = [];
+
+// ── Init ─────────────────────────────────────────────────────────
+let currentMode = 'local';
+function renderModeBadge(){
+  const lo = document.getElementById('mode-opt-local');
+  const cl = document.getElementById('mode-opt-cloud');
+  if(currentMode==='cloud'){
+    cl.style.background='#431407'; cl.style.color='#fb923c'; cl.style.opacity='1';
+    lo.style.background='transparent'; lo.style.color='#555'; lo.style.opacity='.7';
+  } else {
+    lo.style.background='#14532d'; lo.style.color='#86efac'; lo.style.opacity='1';
+    cl.style.background='transparent'; cl.style.color='#555'; cl.style.opacity='.7';
+  }
+}
+fetch('/api/status').then(r=>r.json()).then(d=>{
+  currentMode = d.mode;
+  renderModeBadge();
+});
+async function switchMode(target){
+  if(target === currentMode) return;
+  try{
+    const r = await fetch('/api/mode',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:target})});
+    if(r.ok){
+      currentMode = target;
+      renderModeBadge();
+      appendMsg('Switched to ' + target.toUpperCase() + ' mode — memories now go to ' + (target==='cloud'?'Cognee Cloud':'local Cognee (open source)'), 'remember');
+    }
+  }catch(e){ console.error('mode switch failed', e); }
+}
+document.getElementById('mode-opt-local').addEventListener('click', ()=>switchMode('local'));
+document.getElementById('mode-opt-cloud').addEventListener('click', ()=>switchMode('cloud'));
+
+// ── Onboarding ────────────────────────────────────────────────────
+function obNext(){
+  const val = document.getElementById('ob-input').value.trim();
+  if(!val) return;
+  obAnswers.push({q: OB_QUESTIONS[obStep], a: val});
+  obStep++;
+  updateObProgress();
+  if(obStep >= OB_QUESTIONS.length){
+    finishOnboarding();
+    return;
+  }
+  document.getElementById('ob-question').textContent = OB_QUESTIONS[obStep];
+  document.getElementById('ob-input').value = '';
+  document.getElementById('ob-input').focus();
+}
+
+function updateObProgress(){
+  const dots = document.querySelectorAll('.ob-dot');
+  dots.forEach((d,i)=>{
+    d.className = 'ob-dot' + (i<obStep?' done':i===obStep?' active':'');
+  });
+}
+
+async function finishOnboarding(){
+  document.getElementById('onboarding').remove();
+  const text = obAnswers.map(({q,a})=>`${q}: ${a}`).join('\n');
+  appendMsg(user, '📖 [Your story added to memory]', 'remember');
+  const tid = appendThinking();
+  const dataset = document.getElementById('dataset-select').value;
+  const res = await callAPI('/api/remember', {text, dataset});
+  if(res){
+    if(res.graph) updateGraph(res.graph, []);
+    replaceThinking(tid, buildRememberCard(res));
+  }
+}
+
+function skipOnboarding(){
+  document.getElementById('onboarding').remove();
+}
+
+// ── Op selector ───────────────────────────────────────────────────
+function setOp(op){
+  currentOp = op;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on', p.dataset.op===op));
+  ['remember','recall','improve','forget'].forEach(o=>{
+    document.getElementById('btn-'+o)?.classList.toggle('active',o===op);
+  });
+  const ph = {remember:'Type something to remember...',recall:'Ask anything from your memory...',improve:'Press Send to improve the knowledge graph',forget:'Press Send to erase this dataset from memory'};
+  document.getElementById('msg-input').placeholder = ph[op];
+  document.getElementById('msg-input').focus();
+}
+
+// ── Voice input ───────────────────────────────────────────────────
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    alert('Voice input not supported in this browser. Use Chrome.');
+    return;
+  }
+  if(isRecording){stopVoice();return;}
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.onresult = e=>{
+    const t = Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('msg-input').value = t;
+    autoResize(document.getElementById('msg-input'));
+  };
+  recognition.onend = ()=>stopVoice();
+  recognition.start();
+  isRecording = true;
+  document.getElementById('mic-btn').classList.add('recording');
+  document.getElementById('mic-btn').textContent = '⏹️';
+}
+function stopVoice(){
+  recognition?.stop();
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('mic-btn').textContent = '🎙️';
+}
+
+// ── Send ──────────────────────────────────────────────────────────
+async function send(){
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  const dataset = document.getElementById('dataset-select').value;
+  if((currentOp==='remember'||currentOp==='recall') && !text) return;
+  inp.value=''; autoResize(inp);
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('send-btn').textContent = '...';
+
+  const opLabels = {improve:'Improve memory graph', forget:'Erase memory dataset'};
+  appendMsg(text || opLabels[currentOp] || currentOp, currentOp);
+  const tid = appendThinking();
+
+  let res;
+  if(currentOp==='remember'){
+    res = await callAPI('/api/remember',{text,dataset});
+    if(res){stats.rem++;document.getElementById('s-rem').textContent=stats.rem;
+      if(res.graph) updateGraph(res.graph, res.graph.new_ids||[]);
+      replaceThinking(tid, buildRememberCard(res));
+    }
+  } else if(currentOp==='recall'){
+    res = await callAPI('/api/recall',{query:text,dataset});
+    if(res){stats.rec++;document.getElementById('s-rec').textContent=stats.rec;
+      if(res.graph) updateGraph(res.graph, [], res.highlighted_nodes||[]);
+      replaceThinking(tid, buildRecallCard(res));
+    }
+  } else if(currentOp==='improve'){
+    res = await callAPI('/api/improve',{dataset});
+    if(res) replaceThinking(tid, buildSimpleCard('improve','✨ Memory graph enriched — connections strengthened.',res.mode));
+  } else if(currentOp==='forget'){
+    res = await callAPI('/api/forget',{dataset});
+    if(res){G.nodes=[];G.edges=[];renderGraph();replaceThinking(tid, buildSimpleCard('forget',`🗑️ Dataset "${dataset}" erased.`,res.mode));}
+  }
+  if(!res) replaceThinking(tid,'❌ Error — check your .env keys and try again.');
+  document.getElementById('send-btn').disabled=false;
+  document.getElementById('send-btn').textContent='Send →';
+}
+
+// ── API ───────────────────────────────────────────────────────────
+async function callAPI(url, body){
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){const e=await r.json().catch(()=>({detail:r.statusText}));throw new Error(e.detail);}
+    return r.json();
+  }catch(e){console.error(e);return null;}
+}
+
+// ── Chat helpers ──────────────────────────────────────────────────
+function appendMsg(text, op){
+  const icons={remember:'💾',recall:'🔍',improve:'✨',forget:'🗑️'};
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="bubble">${esc(text)}</div><div class="msg-meta">${icons[op]||''} ${op}</div>`;
+  chat.appendChild(d); scrollChat();
+}
+function appendThinking(){
+  const chat=document.getElementById('chat');
+  const id='t'+Date.now();
+  const d=document.createElement('div');
+  d.className='msg ai'; d.id=id;
+  d.innerHTML=`<div class="bubble"><span class="spinner"></span>Processing memory...</div>`;
+  chat.appendChild(d); scrollChat(); return id;
+}
+function replaceThinking(id,html){
+  const el=document.getElementById(id);
+  if(el){el.innerHTML=html;} scrollChat();
+}
+
+function buildRememberCard(r){
+  const ds=r.dataset||'default';
+  const nodes=r.graph?.nodes?.length||0;
+  const edges=r.graph?.edges?.length||0;
+  return `<div class="result-card"><div class="op-tag tag-r">💾 REMEMBERED</div>
+    <div>Stored in <strong>${ds}</strong> · mode: ${r.mode}</div>
+    <div class="graph-info">+${nodes} graph nodes · ${edges} total connections · hybrid index updated</div>
+  </div>`;
+}
+function buildRecallCard(r){
+  const ans=r.answers||[];
+  const h=ans.length
+    ? ans.map(a=>`<div class="recall-ans">${esc(typeof a==='string'?a:JSON.stringify(a))}</div>`).join('')
+    : `<div class="no-mem">No memories found. Remember something first.</div>`;
+  return `<div class="result-card"><div class="op-tag tag-q">🔍 RECALLED — ${ans.length} result(s)</div>${h}
+    <div class="graph-info">Hybrid graph-vector search · mode: ${r.mode}</div>
+  </div>`;
+}
+function buildSimpleCard(op,msg,mode){
+  const tags={improve:'tag-i',forget:'tag-f'};
+  const icons={improve:'✨',forget:'🗑️'};
+  return `<div class="result-card"><div class="op-tag ${tags[op]||''}">${msg}</div>
+    <div class="graph-info">mode: ${mode}</div></div>`;
+}
+
+function scrollChat(){document.getElementById('chat').scrollTop=9999;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// ── KNOWLEDGE GRAPH ENGINE ────────────────────────────────────────
+function initGraph(){
+  const canvas = document.getElementById('graph-canvas');
+  G.canvas = canvas;
+  G.ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Pan & zoom
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    G.zoom = Math.max(0.2, Math.min(4, G.zoom * factor));
+    renderGraph();
+  }, {passive:false});
+
+  // Drag nodes
+  canvas.addEventListener('mousedown', e=>{
+    const pos = canvasPos(e);
+    const n = nodeAt(pos);
+    if(n){ G.drag = {node:n, ox:pos.x-n.x, oy:pos.y-n.y}; }
+    else { G.drag = {pan:true, sx:e.clientX-G.pan.x, sy:e.clientY-G.pan.y}; }
+  });
+  canvas.addEventListener('mousemove', e=>{
+    if(!G.drag) return;
+    if(G.drag.pan){ G.pan.x=e.clientX-G.drag.sx; G.pan.y=e.clientY-G.drag.sy; renderGraph(); }
+    else { G.drag.node.x=canvasPos(e).x-G.drag.ox; G.drag.node.y=canvasPos(e).y-G.drag.oy; renderGraph(); }
+  });
+  canvas.addEventListener('mouseup', ()=>G.drag=null);
+  canvas.addEventListener('mouseleave', ()=>G.drag=null);
+
+  // Tooltip
+  canvas.addEventListener('mousemove', e=>{
+    const pos = canvasPos(e);
+    const n = nodeAt(pos);
+    canvas.title = n ? `${n.label} (${n.type})` : '';
+  });
+
+  startPhysics();
+}
+
+function resizeCanvas(){
+  const col = document.querySelector('.graph-col');
+  G.canvas.width = col.clientWidth;
+  G.canvas.height = col.clientHeight - 44;
+  renderGraph();
+}
+
+function canvasPos(e){
+  const r = G.canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left - G.pan.x - G.canvas.width/2) / G.zoom,
+    y: (e.clientY - r.top - G.pan.y - G.canvas.height/2) / G.zoom,
+  };
+}
+function nodeAt(pos, r=22){
+  return G.nodes.find(n=>Math.hypot(n.x-pos.x,n.y-pos.y)<r);
+}
+
+function updateGraph(graphData, newIds=[], highlightedIds=[]){
+  // Merge new nodes
+  const existing = new Map(G.nodes.map(n=>[n.id,n]));
+  (graphData.nodes||[]).forEach(n=>{
+    if(!existing.has(n.id)){
+      // Place randomly near center
+      const angle = Math.random()*Math.PI*2;
+      const dist = 20 + Math.random()*30;
+      G.nodes.push({
+        ...n,
+        x: Math.cos(angle)*dist,
+        y: Math.sin(angle)*dist,
+        vx: 0, vy: 0,
+        isNew: newIds.includes(n.id),
+        highlighted: highlightedIds.includes(n.id),
+        pulse: newIds.includes(n.id) ? 1 : 0,
+      });
+    } else {
+      const en = existing.get(n.id);
+      en.highlighted = highlightedIds.includes(n.id);
+      en.isNew = false;
+    }
+  });
+  G.edges = graphData.edges || [];
+
+  // Clear old highlights after 2s
+  if(highlightedIds.length){
+    setTimeout(()=>{
+      G.nodes.forEach(n=>n.highlighted=false);
+    },2500);
+  }
+
+  // Update counts
+  document.getElementById('s-nodes').textContent = G.nodes.length;
+  document.getElementById('s-edges').textContent = G.edges.length;
+  document.getElementById('graph-count').textContent = `${G.nodes.length} nodes · ${G.edges.length} edges`;
+
+  if(G.nodes.length > 0){
+    document.getElementById('graph-empty').style.display = 'none';
+    G.canvas.style.display = 'block';
+    // Auto-fit: run immediately and again as physics settles
+    setTimeout(fitGraph, 800);
+    setTimeout(fitGraph, 2000);
+    setTimeout(fitGraph, 4000);
+  }
+}
+
+function fitGraph(){
+  if(!G.nodes.length) return;
+  const W=G.canvas.width, H=G.canvas.height;
+  if(!W||!H) return;
+  const R=32, pad=60;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  G.nodes.forEach(n=>{
+    minX=Math.min(minX,n.x-R); maxX=Math.max(maxX,n.x+R);
+    minY=Math.min(minY,n.y-R); maxY=Math.max(maxY,n.y+R);
+  });
+  const bw=maxX-minX||1, bh=maxY-minY||1;
+  G.zoom = Math.min((W-pad*2)/bw, (H-pad*2)/bh, 2.0);
+  const bcx=(minX+maxX)/2, bcy=(minY+maxY)/2;
+  G.pan.x = -bcx*G.zoom;
+  G.pan.y = -bcy*G.zoom;
+  G.nodes.forEach(n=>{ n.vx*=0.2; n.vy*=0.2; });
+}
+
+// Force-directed physics
+function startPhysics(){
+  function tick(){
+    const repulsion = 350;
+    const spring = 0.06;
+    const damping = 0.80;
+    const gravity = 0.06;
+
+    // Repulsion
+    for(let i=0;i<G.nodes.length;i++){
+      for(let j=i+1;j<G.nodes.length;j++){
+        const a=G.nodes[i], b=G.nodes[j];
+        let dx=b.x-a.x, dy=b.y-a.y;
+        const dist2=dx*dx+dy*dy+1;
+        const f=repulsion/dist2;
+        a.vx-=f*dx; a.vy-=f*dy;
+        b.vx+=f*dx; b.vy+=f*dy;
+      }
+    }
+    // Spring
+    G.edges.forEach(e=>{
+      const a=G.nodes.find(n=>n.id===e.from);
+      const b=G.nodes.find(n=>n.id===e.to);
+      if(!a||!b) return;
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const dist=Math.hypot(dx,dy)||1;
+      const target=120;
+      const f=(dist-target)*spring;
+      const nx=dx/dist, ny=dy/dist;
+      a.vx+=f*nx; a.vy+=f*ny;
+      b.vx-=f*nx; b.vy-=f*ny;
+    });
+    // Integrate
+    G.nodes.forEach(n=>{
+      if(G.drag?.node===n) return;
+      n.vx=(n.vx-n.x*gravity)*damping;
+      n.vy=(n.vy-n.y*gravity)*damping;
+      n.x+=n.vx; n.y+=n.vy;
+      // Pulse decay
+      if(n.pulse > 0) n.pulse = Math.max(0, n.pulse-0.02);
+    });
+
+    renderGraph();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function renderGraph(){
+  const {canvas,ctx,nodes,edges,pan,zoom} = G;
+  if(!ctx) return;
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if(nodes.length===0) return;
+
+  ctx.save();
+  ctx.translate(W/2+pan.x, H/2+pan.y);
+  ctx.scale(zoom,zoom);
+
+  // Draw edges
+  edges.forEach(e=>{
+    const a=nodes.find(n=>n.id===e.from);
+    const b=nodes.find(n=>n.id===e.to);
+    if(!a||!b) return;
+    const highlighted = a.highlighted && b.highlighted;
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle = highlighted ? '#4ade80' : '#2d2d5e';
+    ctx.lineWidth = highlighted ? 2 : 1;
+    ctx.globalAlpha = highlighted ? 1 : 0.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Edge label
+    if(e.label && zoom > 0.7){
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      ctx.font=`${10/zoom}px system-ui`;
+      ctx.fillStyle='#475569';
+      ctx.textAlign='center';
+      ctx.fillText(e.label, mx, my-4);
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(n=>{
+    const color = NODE_COLORS[n.type] || NODE_COLORS.default;
+    const r = 22;
+    const pulse = n.pulse || 0;
+
+    // Pulse ring for new nodes
+    if(pulse > 0){
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,r+pulse*20,0,Math.PI*2);
+      ctx.strokeStyle=color;
+      ctx.globalAlpha=pulse*0.5;
+      ctx.lineWidth=2;
+      ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    // Highlight glow
+    if(n.highlighted){
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,r+8,0,Math.PI*2);
+      ctx.fillStyle=color+'33';
+      ctx.fill();
+      ctx.strokeStyle=color;
+      ctx.lineWidth=2.5;
+      ctx.stroke();
+    }
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    ctx.fillStyle=color+'22';
+    ctx.fill();
+    ctx.strokeStyle=n.highlighted?color:color+'88';
+    ctx.lineWidth=n.highlighted?2.5:1.5;
+    ctx.stroke();
+
+    // Label
+    const maxLen = 10;
+    const label = n.label.length>maxLen ? n.label.slice(0,maxLen-1)+'…' : n.label;
+    ctx.font=`bold ${Math.max(8,10/Math.sqrt(zoom))}px system-ui`;
+    ctx.fillStyle=n.highlighted?'#fff':color;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(label,n.x,n.y);
+  });
+
+  ctx.restore();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  initGraph();
+  document.getElementById('ob-input').focus();
+});
+</script>
+</body>
+</html>

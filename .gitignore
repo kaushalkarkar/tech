@@ -1,0 +1,12 @@
+# Secrets 
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Cognee local databases
+.cognee_system/
+.cognee_data/
